@@ -1,38 +1,24 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { router } from 'expo-router';
+import { EmptyState, Button } from '../../src/components/ui';
 
 export default function LibraryScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Library</Text>
-      <Pressable style={styles.button} onPress={() => router.push('/exercise/1')}>
-        <Text style={styles.buttonText}>Open Exercise #1</Text>
-      </Pressable>
+    <View className="flex-1 bg-background">
+      <View className="px-4 pt-4 pb-3 border-b border-border flex-row items-center justify-between">
+        <Text className="text-foreground text-lg font-semibold">Exercises</Text>
+        <Button
+          label="+ Custom"
+          variant="ghost"
+          size="sm"
+          onPress={() => router.push('/exercise/1')}
+        />
+      </View>
+      <EmptyState
+        icon="barbell-outline"
+        title="No exercises yet"
+        subtitle="The exercise library will be populated soon. You can also create your own custom exercises."
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    gap: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
