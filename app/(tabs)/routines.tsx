@@ -1,9 +1,10 @@
 import { View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState, Button } from '../../src/components/ui';
 
 export default function RoutinesScreen() {
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="px-4 pt-4 pb-3 border-b border-border flex-row items-center justify-between">
         <Text className="text-foreground text-lg font-semibold">Routines</Text>
         <Button label="+ New" variant="ghost" size="sm" />
@@ -13,6 +14,6 @@ export default function RoutinesScreen() {
         title="No routines yet"
         subtitle="Create a routine to organise your exercises into a repeatable workout plan."
       />
-    </View>
+    </SafeAreaView>
   );
 }

@@ -1,10 +1,11 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { EmptyState, Button } from '../../src/components/ui';
 
 export default function LibraryScreen() {
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="px-4 pt-4 pb-3 border-b border-border flex-row items-center justify-between">
         <Text className="text-foreground text-lg font-semibold">Exercises</Text>
         <Button
@@ -19,6 +20,6 @@ export default function LibraryScreen() {
         title="No exercises yet"
         subtitle="The exercise library will be populated soon. You can also create your own custom exercises."
       />
-    </View>
+    </SafeAreaView>
   );
 }
