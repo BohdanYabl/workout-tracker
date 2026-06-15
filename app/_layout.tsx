@@ -1,12 +1,58 @@
 import '../global.css';
-import { Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
+import { useAuthStore } from '../src/store/auth.store';
+import { LoadingSpinner } from '../src/components/ui';
 
 export default function RootLayout() {
+  const { session, isInitialized, initialize } = useAuthStore();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    void initialize();
+  }, [initialize]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const inAuth = segments[0] === '(auth)';
+
+    if (!session && !inAuth) {
+      router.replace('/(auth)/login');
+    } else if (session && inAuth) {
+      router.replace('/(tabs)');
+    }
+  }, [session, isInitialized, segments, router]);
+
+  if (!isInitialized) {
+    return (
+      <SafeAreaProvider>
+        <View style={styles.loadingContainer}>
+          <LoadingSpinner />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="profile"
+          options={{
+            title: 'My Account',
+            headerShown: true,
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.textPrimary,
+            headerShadowVisible: false,
+          }}
+        />
         <Stack.Screen
           name="exercise/[id]"
           options={{
@@ -21,3 +67,10 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+});

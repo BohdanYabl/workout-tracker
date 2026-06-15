@@ -1,14 +1,25 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Card, Badge, Button } from '../../src/components/ui';
+import { colors } from '../../src/constants/theme';
 
 export default function DashboardScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView contentContainerClassName="p-4 gap-4">
-        <View className="gap-1 pt-2">
-          <Text className="text-secondary text-base">Good morning,</Text>
-          <Text className="text-foreground text-3xl font-bold">Athlete 💪</Text>
+        <View className="flex-row items-center justify-between pt-2">
+          <View className="gap-1">
+            <Text className="text-secondary text-base">Good morning,</Text>
+            <Text className="text-foreground text-3xl font-bold">Athlete 💪</Text>
+          </View>
+          <Pressable
+            onPress={() => router.push('/profile')}
+            hitSlop={8}
+          >
+            <Ionicons name="person-circle-outline" size={28} color={colors.textPrimary} />
+          </Pressable>
         </View>
 
         <Card className="gap-3">
