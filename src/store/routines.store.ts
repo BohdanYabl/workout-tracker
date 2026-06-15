@@ -1,6 +1,9 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Routine, RoutineExercise } from '../types';
 import * as routinesService from '../services/routines.service';
+
+const CACHE_KEY = 'cache:routines';
 
 interface RoutinesState {
   routines: Routine[];
@@ -22,7 +25,17 @@ export const useRoutinesStore = create<RoutinesState>((set, get) => ({
     try {
       const routines = await routinesService.getRoutines();
       set({ routines, isLoading: false });
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(routines));
     } catch (err: unknown) {
+      try {
+        const cached = await AsyncStorage.getItem(CACHE_KEY);
+        if (cached) {
+          set({ routines: JSON.parse(cached) as Routine[], isLoading: false });
+          return;
+        }
+      } catch {
+        // Cache unreadable — fall through to error state
+      }
       set({
         error: err instanceof Error ? err.message : 'Failed to load routines',
         isLoading: false,

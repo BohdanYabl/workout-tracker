@@ -6,7 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { colors } from '../src/constants/theme';
 import { useAuthStore } from '../src/store/auth.store';
-import { LoadingSpinner } from '../src/components/ui';
+import { useNetworkStore } from '../src/store/network.store';
+import { ErrorBoundary, LoadingSpinner, OfflineBanner } from '../src/components/ui';
 import { requestPermissions } from '../src/services/notifications.service';
 
 // Configure how notifications appear while the app is in the foreground
@@ -22,10 +23,10 @@ Notifications.setNotificationHandler({
 
 export default function RootLayout() {
   const { session, isInitialized, initialize } = useAuthStore();
+  const initializeNetwork = useNetworkStore((s) => s.initialize);
   const router = useRouter();
   const segments = useSegments();
 
-  // Request notification permissions once on app start
   useEffect(() => {
     void requestPermissions();
   }, []);
@@ -33,6 +34,11 @@ export default function RootLayout() {
   useEffect(() => {
     void initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    const unsubscribe = initializeNetwork();
+    return unsubscribe;
+  }, [initializeNetwork]);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -49,6 +55,7 @@ export default function RootLayout() {
   if (!isInitialized) {
     return (
       <SafeAreaProvider>
+        <OfflineBanner />
         <View style={styles.loadingContainer}>
           <LoadingSpinner />
         </View>
@@ -58,72 +65,75 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="workout/active" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen
-          name="workout/[id]"
-          options={{
-            title: 'Workout Detail',
-            headerShown: true,
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.textPrimary,
-            headerShadowVisible: false,
-          }}
-        />
-        <Stack.Screen
-          name="workout/summary"
-          options={{
-            title: 'Workout Complete',
-            headerShown: true,
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.textPrimary,
-            headerShadowVisible: false,
-            headerBackVisible: false,
-          }}
-        />
-        <Stack.Screen
-          name="routine/create"
-          options={{
-            title: 'New Routine',
-            headerShown: true,
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.textPrimary,
-            headerShadowVisible: false,
-          }}
-        />
-        <Stack.Screen
-          name="routine/edit/[id]"
-          options={{
-            title: 'Edit Routine',
-            headerShown: true,
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.textPrimary,
-            headerShadowVisible: false,
-          }}
-        />
-        <Stack.Screen
-          name="profile"
-          options={{
-            title: 'My Account',
-            headerShown: true,
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.textPrimary,
-            headerShadowVisible: false,
-          }}
-        />
-        <Stack.Screen
-          name="exercise/[id]"
-          options={{
-            headerShown: true,
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.textPrimary,
-            headerShadowVisible: false,
-            title: 'Exercise Detail',
-          }}
-        />
-      </Stack>
+      <OfflineBanner />
+      <ErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="workout/active" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen
+            name="workout/[id]"
+            options={{
+              title: 'Workout Detail',
+              headerShown: true,
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.textPrimary,
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="workout/summary"
+            options={{
+              title: 'Workout Complete',
+              headerShown: true,
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.textPrimary,
+              headerShadowVisible: false,
+              headerBackVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="routine/create"
+            options={{
+              title: 'New Routine',
+              headerShown: true,
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.textPrimary,
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="routine/edit/[id]"
+            options={{
+              title: 'Edit Routine',
+              headerShown: true,
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.textPrimary,
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="profile"
+            options={{
+              title: 'My Account',
+              headerShown: true,
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.textPrimary,
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="exercise/[id]"
+            options={{
+              headerShown: true,
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.textPrimary,
+              headerShadowVisible: false,
+              title: 'Exercise Detail',
+            }}
+          />
+        </Stack>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
