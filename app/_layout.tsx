@@ -44,6 +44,26 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
+          name="routine/create"
+          options={{
+            title: 'New Routine',
+            headerShown: true,
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.textPrimary,
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen
+          name="routine/edit/[id]"
+          options={{
+            title: 'Edit Routine',
+            headerShown: true,
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.textPrimary,
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen
           name="profile"
           options={{
             title: 'My Account',

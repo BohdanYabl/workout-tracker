@@ -1,24 +1,25 @@
 import { useEffect } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState, Button, Card, LoadingSpinner } from '../../src/components/ui';
+import { router } from 'expo-router';
+import { EmptyState, Button, LoadingSpinner } from '../../src/components/ui';
+import { RoutineListCard } from '../../src/components/features/RoutineListCard';
 import { useRoutinesStore } from '../../src/store';
 import type { Routine } from '../../src/types';
 
-function RoutineCard({ routine }: { routine: Routine }) {
-  const count = routine.exercises.length;
-  return (
-    <Card className="gap-1">
-      <Text className="text-foreground text-base font-semibold">{routine.name}</Text>
-      <Text className="text-secondary text-sm">
-        {count} {count === 1 ? 'exercise' : 'exercises'}
-      </Text>
-    </Card>
+function confirmDelete(routine: Routine, onConfirm: () => void) {
+  Alert.alert(
+    'Delete Routine',
+    `Delete "${routine.name}"? This cannot be undone.`,
+    [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: onConfirm },
+    ],
   );
 }
 
 export default function RoutinesScreen() {
-  const { routines, isLoading, fetchRoutines } = useRoutinesStore();
+  const { routines, isLoading, fetchRoutines, removeRoutine } = useRoutinesStore();
 
   useEffect(() => {
     void fetchRoutines();
@@ -32,7 +33,7 @@ export default function RoutinesScreen() {
         <EmptyState
           icon="list-outline"
           title="No routines yet"
-          subtitle="Create a routine to organise your exercises into a repeatable workout plan."
+          subtitle="Create your first workout plan."
         />
       );
     }
@@ -41,7 +42,13 @@ export default function RoutinesScreen() {
       <FlatList
         data={routines}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <RoutineCard routine={item} />}
+        renderItem={({ item }) => (
+          <RoutineListCard
+            routine={item}
+            onPress={() => router.push(`/routine/edit/${item.id}`)}
+            onDelete={() => confirmDelete(item, () => void removeRoutine(item.id))}
+          />
+        )}
         contentContainerStyle={{ padding: 16, gap: 12 }}
       />
     );
@@ -50,8 +57,13 @@ export default function RoutinesScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="px-4 pt-4 pb-3 border-b border-border flex-row items-center justify-between">
-        <Text className="text-foreground text-lg font-semibold">Routines</Text>
-        <Button label="+ New" variant="ghost" size="sm" />
+        <Text className="text-foreground text-lg font-semibold">My Routines</Text>
+        <Button
+          label="+ New"
+          variant="ghost"
+          size="sm"
+          onPress={() => router.push('/routine/create')}
+        />
       </View>
       {renderBody()}
     </SafeAreaView>

@@ -33,9 +33,16 @@ export async function createRoutine(
   name: string,
   exercises: RoutineExercise[],
 ): Promise<Routine> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError) throw new Error(userError.message);
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('routines')
-    .insert({ name, exercises })
+    .insert({ user_id: user.id, name, exercises })
     .select()
     .single();
   if (error) throw new Error(error.message);
