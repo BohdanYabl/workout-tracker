@@ -8,6 +8,8 @@ import type {
 } from '../types';
 import { EXERCISES } from '../data/exercises';
 import { calculateVolume, isPersonalRecord } from '../utils/workout.utils';
+import * as hapticsService from '../services/haptics.service';
+import * as notificationsService from '../services/notifications.service';
 
 // ── Exported types ────────────────────────────────────────────────────────────
 
@@ -40,6 +42,7 @@ interface ActiveWorkoutState {
   elapsedSeconds: number;
   restSeconds: number | null;
   timerInterval: ReturnType<typeof setInterval> | null;
+  notificationId: string | null;
   completedSession: WorkoutSession | null;
 
   startWorkout: (routine: Routine) => void;
@@ -69,6 +72,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   elapsedSeconds: 0,
   restSeconds: null,
   timerInterval: null,
+  notificationId: null,
   completedSession: null,
 
   startWorkout: (routine) => {
@@ -103,6 +107,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       elapsedSeconds: 0,
       restSeconds: null,
       timerInterval: null,
+      notificationId: null,
       completedSession: null,
     });
 
@@ -114,16 +119,22 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     if (existing !== null) clearInterval(existing);
 
     const interval = setInterval(() => {
-      set((state) => ({
+      const state = get();
+
+      // Detect rest timer reaching zero
+      if (state.restSeconds !== null && state.restSeconds <= 1) {
+        hapticsService.warningNotification();
+        if (state.notificationId) {
+          void notificationsService.cancelNotification(state.notificationId).catch(() => {});
+        }
+        set({ elapsedSeconds: state.elapsedSeconds + 1, restSeconds: null, notificationId: null });
+        return;
+      }
+
+      set({
         elapsedSeconds: state.elapsedSeconds + 1,
-        // Rest countdown shares the same tick so we only need one interval
-        restSeconds:
-          state.restSeconds === null
-            ? null
-            : state.restSeconds <= 1
-              ? null
-              : state.restSeconds - 1,
-      }));
+        restSeconds: state.restSeconds !== null ? state.restSeconds - 1 : null,
+      });
     }, 1000);
 
     set({ timerInterval: interval });
@@ -159,7 +170,6 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
     let isPR = false;
     if (isCompleting && workoutSet.weight > 0 && workoutSet.reps > 0) {
-      // Build history from already-completed sets in this exercise for within-workout PR detection
       const history: PersonalRecord[] = exercise.sets
         .filter((s) => s.isCompleted)
         .map((s) => ({
@@ -187,22 +197,43 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
     set({ exercises });
 
-    if (isCompleting && exercise.restSeconds > 0) {
-      set({ restSeconds: exercise.restSeconds });
+    if (isCompleting) {
+      hapticsService.successNotification();
+      if (isPR) hapticsService.heavyImpact();
+
+      if (exercise.restSeconds > 0) {
+        get().startRestTimer(exercise.restSeconds);
+      }
     }
   },
 
   startRestTimer: (seconds) => {
-    set({ restSeconds: seconds });
+    // Cancel any previous rest notification before scheduling a new one
+    const { notificationId } = get();
+    if (notificationId) {
+      void notificationsService.cancelNotification(notificationId).catch(() => {});
+    }
+
+    set({ restSeconds: seconds, notificationId: null });
+
+    void notificationsService
+      .scheduleRestEndNotification(seconds)
+      .then((id) => set({ notificationId: id }))
+      .catch(() => {}); // Silently ignore if permissions denied
   },
 
   skipRest: () => {
-    set({ restSeconds: null });
+    const { notificationId } = get();
+    if (notificationId) {
+      void notificationsService.cancelNotification(notificationId).catch(() => {});
+    }
+    set({ restSeconds: null, notificationId: null });
   },
 
   finishWorkout: () => {
     const state = get();
     get().stopElapsedTimer();
+    void notificationsService.cancelAllNotifications().catch(() => {});
 
     const startedAt = state.startedAt ?? new Date();
 
@@ -223,7 +254,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     const totalVolume = calculateVolume(workoutExercises.flatMap((e) => e.sets));
 
     const session: WorkoutSession = {
-      id: Date.now().toString(), // Temporary — DB assigns the real UUID on insert
+      id: Date.now().toString(),
       routineName: state.routineName,
       startedAt: startedAt.toISOString(),
       finishedAt: new Date().toISOString(),
@@ -233,13 +264,14 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       totalVolume,
     };
 
-    set({ completedSession: session, isActive: false, restSeconds: null });
+    set({ completedSession: session, isActive: false, restSeconds: null, notificationId: null });
 
     return session;
   },
 
   cancelWorkout: () => {
     get().stopElapsedTimer();
+    void notificationsService.cancelAllNotifications().catch(() => {});
     set({
       routineId: null,
       routineName: '',
@@ -249,6 +281,7 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       elapsedSeconds: 0,
       restSeconds: null,
       timerInterval: null,
+      notificationId: null,
       completedSession: null,
     });
   },

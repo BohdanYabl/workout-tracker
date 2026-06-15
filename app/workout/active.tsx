@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -9,6 +9,7 @@ import { useWorkoutsStore } from '../../src/store/workouts.store';
 import { useRoutinesStore } from '../../src/store/routines.store';
 import { formatDuration } from '../../src/utils/workout.utils';
 import { colors } from '../../src/constants/theme';
+import * as hapticsService from '../../src/services/haptics.service';
 
 // ── Sub-components (fine-grained store subscriptions to limit re-renders) ────
 
@@ -22,6 +23,16 @@ function ElapsedTimer() {
 function RestTimerOverlay() {
   const restSeconds = useActiveWorkoutStore((s) => s.restSeconds);
   const skipRest = useActiveWorkoutStore((s) => s.skipRest);
+
+  // Detect natural rest-end (non-null → null transition) and trigger haptic
+  const prevRef = useRef<number | null | undefined>(undefined);
+  useEffect(() => {
+    if (prevRef.current !== undefined && prevRef.current !== null && restSeconds === null) {
+      hapticsService.warningNotification();
+    }
+    prevRef.current = restSeconds;
+  }, [restSeconds]);
+
   if (restSeconds === null) return null;
 
   return (
@@ -30,7 +41,15 @@ function RestTimerOverlay() {
       <Text className="text-foreground font-bold" style={{ fontSize: 72 }}>
         {restSeconds}
       </Text>
-      <Button label="Skip Rest" variant="secondary" size="sm" onPress={skipRest} />
+      <Button
+        label="Skip Rest"
+        variant="secondary"
+        size="sm"
+        onPress={() => {
+          hapticsService.lightImpact();
+          skipRest();
+        }}
+      />
     </View>
   );
 }

@@ -3,14 +3,32 @@ import { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import { colors } from '../src/constants/theme';
 import { useAuthStore } from '../src/store/auth.store';
 import { LoadingSpinner } from '../src/components/ui';
+import { requestPermissions } from '../src/services/notifications.service';
+
+// Configure how notifications appear while the app is in the foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export default function RootLayout() {
   const { session, isInitialized, initialize } = useAuthStore();
   const router = useRouter();
   const segments = useSegments();
+
+  // Request notification permissions once on app start
+  useEffect(() => {
+    void requestPermissions();
+  }, []);
 
   useEffect(() => {
     void initialize();
