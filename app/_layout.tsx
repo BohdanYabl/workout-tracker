@@ -43,6 +43,18 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="workout/active" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen
+          name="workout/summary"
+          options={{
+            title: 'Workout Complete',
+            headerShown: true,
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.textPrimary,
+            headerShadowVisible: false,
+            headerBackVisible: false,
+          }}
+        />
         <Stack.Screen
           name="routine/create"
           options={{

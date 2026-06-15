@@ -1,11 +1,42 @@
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Badge, Button } from '../../src/components/ui';
+import { useRoutinesStore } from '../../src/store/routines.store';
 import { colors } from '../../src/constants/theme';
 
 export default function DashboardScreen() {
+  const routines = useRoutinesStore((s) => s.routines);
+
+  function handleStartWorkout() {
+    if (routines.length === 0) {
+      Alert.alert(
+        'No Routines',
+        'Create a routine first before starting a workout.',
+        [{ text: 'OK' }],
+      );
+      return;
+    }
+
+    if (routines.length === 1) {
+      router.push(`/workout/active?routineId=${routines[0].id}`);
+      return;
+    }
+
+    Alert.alert(
+      'Choose a Routine',
+      'Which routine would you like to do today?',
+      [
+        ...routines.slice(0, 5).map((r) => ({
+          text: r.name,
+          onPress: () => router.push(`/workout/active?routineId=${r.id}`),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView contentContainerClassName="p-4 gap-4">
@@ -14,10 +45,7 @@ export default function DashboardScreen() {
             <Text className="text-secondary text-base">Good morning,</Text>
             <Text className="text-foreground text-3xl font-bold">Athlete 💪</Text>
           </View>
-          <Pressable
-            onPress={() => router.push('/profile')}
-            hitSlop={8}
-          >
+          <Pressable onPress={() => router.push('/profile')} hitSlop={8}>
             <Ionicons name="person-circle-outline" size={28} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -42,7 +70,7 @@ export default function DashboardScreen() {
           </View>
         </Card>
 
-        <Button label="Start Workout" size="lg" />
+        <Button label="Start Workout" size="lg" onPress={handleStartWorkout} />
 
         <Card className="gap-3">
           <View className="flex-row items-center justify-between">
