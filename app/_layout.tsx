@@ -45,6 +45,16 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="workout/active" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen
+          name="workout/[id]"
+          options={{
+            title: 'Workout Detail',
+            headerShown: true,
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.textPrimary,
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen
           name="workout/summary"
           options={{
             title: 'Workout Complete',
