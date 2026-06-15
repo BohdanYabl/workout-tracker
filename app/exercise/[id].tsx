@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,13 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { EXERCISES } from '../../src/data/exercises';
 import { Card, Badge, Button } from '../../src/components/ui';
 import { MUSCLE_LABELS, EQUIPMENT_LABELS } from '../../src/components/features/ExerciseCard';
+import { useExercisesStore } from '../../src/store/exercises.store';
 import { colors } from '../../src/constants/theme';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { favorites, toggleFavorite } = useExercisesStore();
 
   const exercise = EXERCISES.find((e) => e.id === id);
+  const isFavorite = id ? favorites.has(id) : false;
 
   if (!exercise) {
     return (
@@ -60,7 +61,7 @@ export default function ExerciseDetailScreen() {
 
         {/* ── Favourite ──────────────────────────────────────────────────── */}
         <Pressable
-          onPress={() => setIsFavorite((prev) => !prev)}
+          onPress={() => id && void toggleFavorite(id)}
           className={
             isFavorite
               ? 'flex-row items-center justify-center gap-2 rounded-xl py-3 bg-surface border border-border'

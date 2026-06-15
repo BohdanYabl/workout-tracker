@@ -7,7 +7,8 @@ import * as Notifications from 'expo-notifications';
 import { colors } from '../src/constants/theme';
 import { useAuthStore } from '../src/store/auth.store';
 import { useNetworkStore } from '../src/store/network.store';
-import { ErrorBoundary, LoadingSpinner, OfflineBanner } from '../src/components/ui';
+import { useSettingsStore } from '../src/store/settings.store';
+import { BackButton, ErrorBoundary, LoadingSpinner, OfflineBanner } from '../src/components/ui';
 import { requestPermissions } from '../src/services/notifications.service';
 
 // Configure how notifications appear while the app is in the foreground
@@ -24,6 +25,7 @@ Notifications.setNotificationHandler({
 export default function RootLayout() {
   const { session, isInitialized, initialize } = useAuthStore();
   const initializeNetwork = useNetworkStore((s) => s.initialize);
+  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
   const router = useRouter();
   const segments = useSegments();
 
@@ -39,6 +41,10 @@ export default function RootLayout() {
     const unsubscribe = initializeNetwork();
     return unsubscribe;
   }, [initializeNetwork]);
+
+  useEffect(() => {
+    void fetchSettings();
+  }, [fetchSettings]);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -67,7 +73,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <OfflineBanner />
       <ErrorBoundary>
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{ headerShown: false, headerBackTitle: '' }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="workout/active" options={{ presentation: 'modal', headerShown: false }} />
@@ -79,6 +85,7 @@ export default function RootLayout() {
               headerStyle: { backgroundColor: colors.background },
               headerTintColor: colors.textPrimary,
               headerShadowVisible: false,
+              headerLeft: () => <BackButton />,
             }}
           />
           <Stack.Screen
@@ -100,6 +107,7 @@ export default function RootLayout() {
               headerStyle: { backgroundColor: colors.background },
               headerTintColor: colors.textPrimary,
               headerShadowVisible: false,
+              headerLeft: () => <BackButton />,
             }}
           />
           <Stack.Screen
@@ -110,6 +118,7 @@ export default function RootLayout() {
               headerStyle: { backgroundColor: colors.background },
               headerTintColor: colors.textPrimary,
               headerShadowVisible: false,
+              headerLeft: () => <BackButton />,
             }}
           />
           <Stack.Screen
@@ -120,16 +129,18 @@ export default function RootLayout() {
               headerStyle: { backgroundColor: colors.background },
               headerTintColor: colors.textPrimary,
               headerShadowVisible: false,
+              headerLeft: () => <BackButton />,
             }}
           />
           <Stack.Screen
             name="exercise/[id]"
             options={{
+              title: 'Exercise Detail',
               headerShown: true,
               headerStyle: { backgroundColor: colors.background },
               headerTintColor: colors.textPrimary,
               headerShadowVisible: false,
-              title: 'Exercise Detail',
+              headerLeft: () => <BackButton />,
             }}
           />
         </Stack>

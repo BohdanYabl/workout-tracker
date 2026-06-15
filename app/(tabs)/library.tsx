@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { EmptyState } from '../../src/components/ui';
 import { ExerciseCard, MUSCLE_LABELS, EQUIPMENT_LABELS } from '../../src/components/features/ExerciseCard';
+import { useExercisesStore } from '../../src/store/exercises.store';
 import { EXERCISES } from '../../src/data/exercises';
 import { colors } from '../../src/constants/theme';
 import type { MuscleGroup, Equipment, Exercise } from '../../src/types';
@@ -29,18 +30,20 @@ interface FilterChipProps {
   label: string;
   active: boolean;
   onPress: () => void;
+  icon?: React.ReactNode;
 }
 
-function FilterChip({ label, active, onPress }: FilterChipProps) {
+function FilterChip({ label, active, onPress, icon }: FilterChipProps) {
   return (
     <Pressable
       onPress={onPress}
       className={
         active
-          ? 'px-3 py-1.5 rounded-full border bg-primary border-primary'
-          : 'px-3 py-1.5 rounded-full border bg-surface border-border'
+          ? 'px-3 py-1.5 rounded-full border bg-primary border-primary flex-row items-center gap-1'
+          : 'px-3 py-1.5 rounded-full border bg-surface border-border flex-row items-center gap-1'
       }
     >
+      {icon}
       <Text
         className={
           active ? 'text-sm font-medium text-white' : 'text-sm font-medium text-secondary'
@@ -56,23 +59,39 @@ export default function LibraryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [showFavorites, setShowFavorites] = useState(false);
+
+  const { favorites, loadFavorites } = useExercisesStore();
+
+  useEffect(() => {
+    void loadFavorites();
+  }, [loadFavorites]);
 
   const filtered = useMemo<Exercise[]>(() => {
     const q = searchQuery.trim().toLowerCase();
     return EXERCISES.filter((e) => {
       if (q && !e.name.toLowerCase().includes(q)) return false;
-      if (selectedMuscle && e.muscleGroup !== selectedMuscle) return false;
+      if (showFavorites && !favorites.has(e.id)) return false;
+      if (!showFavorites && selectedMuscle && e.muscleGroup !== selectedMuscle) return false;
       if (selectedEquipment && e.equipment !== selectedEquipment) return false;
       return true;
     });
-  }, [searchQuery, selectedMuscle, selectedEquipment]);
+  }, [searchQuery, selectedMuscle, selectedEquipment, showFavorites, favorites]);
 
   function toggleMuscle(group: MuscleGroup) {
+    setShowFavorites(false);
     setSelectedMuscle((prev) => (prev === group ? null : group));
   }
 
   function toggleEquipment(eq: Equipment) {
     setSelectedEquipment((prev) => (prev === eq ? null : eq));
+  }
+
+  function toggleFavoritesFilter() {
+    setShowFavorites((prev) => !prev);
+    if (!showFavorites) {
+      setSelectedMuscle(null);
+    }
   }
 
   return (
@@ -100,7 +119,7 @@ export default function LibraryScreen() {
         />
       </View>
 
-      {/* ── Muscle filter ─────────────────────────────────────────────────── */}
+      {/* ── Muscle filter (with Favorites chip first) ─────────────────────── */}
       <View className="mb-2">
         <Text className="px-4 text-secondary text-xs font-medium uppercase tracking-widest mb-2">
           Muscle
@@ -111,15 +130,27 @@ export default function LibraryScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
         >
           <FilterChip
+            label="Favorites"
+            active={showFavorites}
+            onPress={toggleFavoritesFilter}
+            icon={
+              <Ionicons
+                name={showFavorites ? 'heart' : 'heart-outline'}
+                size={13}
+                color={showFavorites ? '#fff' : colors.textSecondary}
+              />
+            }
+          />
+          <FilterChip
             label="All"
-            active={selectedMuscle === null}
-            onPress={() => setSelectedMuscle(null)}
+            active={!showFavorites && selectedMuscle === null}
+            onPress={() => { setSelectedMuscle(null); setShowFavorites(false); }}
           />
           {MUSCLE_GROUPS.map((group) => (
             <FilterChip
               key={group}
               label={MUSCLE_LABELS[group]}
-              active={selectedMuscle === group}
+              active={!showFavorites && selectedMuscle === group}
               onPress={() => toggleMuscle(group)}
             />
           ))}
@@ -155,9 +186,13 @@ export default function LibraryScreen() {
       {/* ── Results ───────────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <EmptyState
-          icon="search-outline"
-          title="No results"
-          subtitle="Try a different name, muscle group, or equipment filter."
+          icon={showFavorites ? 'heart-outline' : 'search-outline'}
+          title={showFavorites ? 'No favourites yet' : 'No results'}
+          subtitle={
+            showFavorites
+              ? 'Open an exercise and tap "Mark as Favourite" to save it here.'
+              : 'Try a different name, muscle group, or equipment filter.'
+          }
         />
       ) : (
         <FlatList
@@ -166,6 +201,7 @@ export default function LibraryScreen() {
           renderItem={({ item }) => (
             <ExerciseCard
               exercise={item}
+              isFavorite={favorites.has(item.id)}
               onPress={() => router.push(`/exercise/${item.id}`)}
             />
           )}

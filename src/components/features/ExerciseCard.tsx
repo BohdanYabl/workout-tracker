@@ -1,6 +1,8 @@
 import React from 'react';
 import { Pressable, View, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Card, Badge } from '../ui';
+import { colors } from '../../constants/theme';
 import type { Exercise, MuscleGroup, Equipment } from '../../types';
 
 export const MUSCLE_LABELS: Record<MuscleGroup, string> = {
@@ -29,15 +31,25 @@ export const EQUIPMENT_LABELS: Record<Equipment, string> = {
 interface ExerciseCardProps {
   exercise: Exercise;
   onPress: () => void;
+  isFavorite?: boolean;
 }
 
-export function ExerciseCard({ exercise, onPress }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, onPress, isFavorite = false }: ExerciseCardProps) {
   const visibleSecondary = exercise.secondaryMuscles.slice(0, 2);
 
   return (
     <Pressable onPress={onPress}>
       <Card className="gap-2.5">
-        <Text className="text-foreground text-base font-semibold">{exercise.name}</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="text-foreground text-base font-semibold flex-1 mr-2">
+            {exercise.name}
+          </Text>
+          <Ionicons
+            name={isFavorite ? 'heart' : 'heart-outline'}
+            size={16}
+            color={isFavorite ? colors.danger : colors.textMuted}
+          />
+        </View>
         <View className="flex-row flex-wrap gap-1.5">
           <Badge label={MUSCLE_LABELS[exercise.muscleGroup]} variant="primary" />
           <Badge label={EQUIPMENT_LABELS[exercise.equipment]} variant="muted" />
