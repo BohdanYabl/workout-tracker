@@ -43,6 +43,7 @@ yarn-error.*
 # Local dev files — not for repo
 PLAN.md
 CLAUDE.md
+NOTES.md
 .claude/
 .env
 EOF
